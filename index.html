@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Process Engineering Time Analysis</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 60px 20px; 
+      background: #e0e7ff; 
+      color: #1e293b;
+    }
+
+    /* ==========================================
+       GAYA ELEGANT MODERN TEKS BERJALAN (MARQUEE)
+       ========================================== */
+    .marquee-container {
+      position: fixed;
+      left: 0;
+      width: 100vw;
+      background: linear-gradient(90deg, #1e3a8a, #0f172a);
+      color: #f59e0b; 
+      font-weight: bold;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 12px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+    }
+
+    .marquee-top { top: 0; border-bottom: 2px solid #f59e0b; }
+    .marquee-bottom { bottom: 0; border-top: 2px solid #f59e0b; }
+
+    .track-left {
+      display: inline-block;
+      padding-left: 100%;
+      animation: marqueeLeft 25s linear infinite;
+    }
+
+    .track-right {
+      display: inline-block;
+      padding-right: 100%;
+      animation: marqueeRight 25s linear infinite;
+    }
+
+    @keyframes marqueeLeft {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
+
+    @keyframes marqueeRight {
+      0% { transform: translate3d(-100%, 0, 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+
+    /* ==========================================
+       GAYA HAlAMAN UTAMA
+       ========================================== */
+    h1 {
+      text-align: center;
+      color: #1e3a8a;
+      margin-bottom: 25px;
+      font-weight: 800;
+      margin-top: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.15);
+      margin-bottom: 20px;
+    }
+
+    h2 { color: #1e3a8a; margin-top: 0; margin-bottom: 15px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+      color: #3b82f6;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #bfdbfe;
+      background-color: #ffffff;
+      color: #1e293b;
+      transition: 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .btn-add { background: #2563eb; color: white; }
+    .btn-add:hover { background: #1d4ed8; }
+
+    .btn-export { background: #059669; color: white; }
+    .btn-export:hover { background: #047857; }
+
+    .table-container { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+    }
+
+    table th, table td {
+      border: 1px solid #cbd5e1;
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    table th { background: #1e3a8a; color: white; }
+    table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+    .bottleneck {
+      background: #fee2e2 !important;
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    /* =======================================================
+       YANG BARU: STYLE PANEL DASHBOARD PE REKAYASA PROSES
+       ======================================================= */
+    .pe-dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 25px;
+      margin-bottom: 15px;
+    }
+
+    .pe-metric-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      border-top: 4px solid #3b82f6;
+    }
+
+    .pe-metric-card.card-danger { border-top-color: #ef4444; }
+    .pe-metric-card.card-success { border-top-color: #10b981; }
+
+    .pe-card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .pe-card-value {
+      font-size: 22px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+
+    .pe-card-desc {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .pe-insight-box {
+      background: #fffbec;
+      border-left: 5px solid #d97706;
+      border-radius: 0 10px 10px 0;
+      padding: 16px;
+      margin-top: 15px;
+      margin-bottom: 25px;
+    }
+
+    .pe-insight-box h4 {
+      margin: 0 0 6px 0;
+      color: #78350f;
+      font-size: 14px;
+    }
+
+    .pe-insight-box p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+    }
+
+    /* =======================================================
+       ARSITEKTUR DIAGRAM BATANG NATIVE (GARANSI PASTI MUNCUL)
+       ======================================================= */
+    .chart-card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.15);
+      margin-top: 25px;
+      margin-bottom: 25px;
+    }
+
+    .chart-title-area {
+      text-align: center;
+      color: #4472c4;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .custom-chart-wrapper {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      gap: 30px;
+      height: 280px;
+      border-bottom: 2px solid #cbd5e1;
+      border-left: 2px solid #cbd5e1;
+      padding: 20px 15px 0 15px;
+      margin-top: 10px;
+      overflow-x: auto; 
+    }
+
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      width: 50px;
+      height: 100%;
+    }
+
+    .bar-text-value {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #2c3e50;
+      white-space: nowrap;
+    }
+
+    .bar-rect {
+      width: 100%;
+      background-color: #4472c4; 
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      transition: height 0.4s ease-out;
+    }
+
+    .bar-rect.highlight-red {
+      background-color: #ef4444; 
+    }
+
+    .bar-label-node {
+      font-size: 13px;
+      font-weight: bold;
+      margin-top: 8px;
+      color: #555555;
+      position: relative;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .summary-box {
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(30, 58, 138, 0.1);
+      border-left: 5px solid #2563eb;
+    }
+
+    .summary-box h3 { margin: 0 0 10px; color: #1e293b; font-size: 14px; }
+    .summary-box p { font-size: 24px; font-weight: bold; margin: 0; color: #1e3a8a; }
+
+    .footer-btn { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .btn-edit { background: #e2e8f0; color: #334155; padding: 6px 12px; font-size: 13px; }
+    .btn-edit:hover { background: #cbd5e1; }
+    /* ===================================== */
+/* MODERN TOOLS WIDGET */
+/* ===================================== */
+
+.tools-widget-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:20px;
+  margin-bottom:25px;
+}
+
+.tool-widget-card{
+  background:#0f172a;
+  border-radius:24px;
+  padding:25px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.25);
+  border:1px solid rgba(255,255,255,0.05);
+}
+
+.tool-header{
+  color:#ffffff;
+  font-size:18px;
+  font-weight:800;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:1px;
+}
+
+/* ===================================== */
+/* DIGITAL CLOCK */
+/* ===================================== */
+
+.digital-clock-modern{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.clock-circle{
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  border:6px solid #38bdf8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle,#1e293b,#020617);
+  box-shadow:
+    0 0 20px rgba(56,189,248,0.4),
+    inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+#digitalClock{
+  color:#ffffff;
+  font-size:28px;
+  font-weight:900;
+  font-family:'Courier New',monospace;
+  letter-spacing:2px;
+  text-shadow:0 0 10px rgba(56,189,248,0.8);
+}
+
+/* ===================================== */
+/* STOPWATCH */
+/* ===================================== */
+
+.stopwatch-box{
+  text-align:center;
+}
+
+.stopwatch-display{
+  background:#020617;
+  border-radius:20px;
+  padding:25px;
+  margin-bottom:20px;
+  border:2px solid #334155;
+}
+
+#stopwatchMain{
+  color:#ffffff;
+  font-size:36px;
+  font-weight:900;
+  font-family:'Courier New',monospace;
+}
+
+#stopwatchMs{
+  color:#f97316;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.stopwatch-buttons{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+}
+
+.stopwatch-buttons button{
+  border:none;
+  border-radius:14px;
+  padding:12px 18px;
+  color:white;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.sw-start{
+  background:#10b981;
+}
+
+.sw-stop{
+  background:#f59e0b;
+}
+
+.sw-reset{
+  background:#ef4444;
+}
+
+/* ===================================== */
+/* CALCULATOR */
+/* ===================================== */
+
+.calc-display input{
+  width:100%;
+  height:80px;
+  border:none;
+  border-radius:18px;
+  background:#020617;
+  color:#ffffff;
+  font-size:34px;
+  font-weight:900;
+  text-align:right;
+  padding:20px;
+  margin-bottom:15px;
+}
+
+.calc-buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.calc-buttons button{
+  height:60px;
+  border:none;
+  border-radius:16px;
+  background:#1e293b;
+  color:#ffffff;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.calc-buttons button:hover{
+  background:#2563eb;
+  transform:translateY(-2px);
+}
+
+.calc-equal{
+  background:#7c3aed !important;
+}
+/* ===================================== */
+/* LAP / SPLIT STYLE */
+/* ===================================== */
+
+.sw-lap{
+  background:#3b82f6;
+}
+
+.lap-container{
+  margin-top:20px;
+  background:#020617;
+  border-radius:18px;
+  padding:15px;
+  border:1px solid #334155;
+}
+
+.lap-title{
+  color:#ffffff;
+  font-size:14px;
+  font-weight:bold;
+  margin-bottom:10px;
+  letter-spacing:1px;
+}
+
+.lap-list{
+  max-height:180px;
+  overflow-y:auto;
+}
+
+.lap-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px;
+  margin-bottom:8px;
+  border-radius:12px;
+  background:#1e293b;
+  color:#ffffff;
+  font-family:'Courier New',monospace;
+  font-size:14px;
+}
+
+.lap-item span:first-child{
+  color:#38bdf8;
+  font-weight:bold;
+}
+  </style>
+</head>
+<body>
+
+  <!-- Teks Berjalan Atas (Kanan ke Kiri) -->
+  <div class="marquee-container marquee-top">
+    <div class="track-left">WEB DEVELOPER CHAREL JUNIOR RATTU &nbsp;&nbsp;&bull;&nbsp;&nbsp; PROCESS ENGINEERING TIME ANALYSIS SYSTEM &nbsp;&nbsp;&bull;&nbsp;&nbsp;</div>
+  </div>
+
+  <div class="container">
+    <h1>PROCESS ENGINEERING - TIME ANALYSIS</h1>
+
+    <div class="card">
+      <h2>Process Time Input</h2>
+      <!-- ===================================== -->
+<!-- MODERN TOOLS WIDGET -->
+<!-- ===================================== -->
+
+<div class="tools-widget-grid">
+
+  <!-- DIGITAL CLOCK -->
+  <div class="tool-widget-card">
+
+    <div class="tool-header">
+      <span>🕒</span>
+      DIGITAL CLOCK
+    </div>
+
+    <div class="digital-clock-modern">
+
+      <div class="clock-circle">
+
+        <div id="digitalClock">
+          00:00:00
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- STOPWATCH -->
+  <div class="tool-widget-card">
+
+    <div class="tool-header">
+      <span>⏱</span>
+      STOPWATCH TIMER
+    </div>
+
+    <div class="stopwatch-box">
+
+      <div class="stopwatch-display">
+
+        <span id="stopwatchMain">
+          00:00:00
+        </span>
+
+        <span id="stopwatchMs">
+          .000
+        </span>
+
+      </div>
+
+      <div class="stopwatch-buttons">
+
+  <button class="sw-start" onclick="startStopwatch()">
+    START
+  </button>
+
+  <button class="sw-stop" onclick="stopStopwatch()">
+    STOP
+  </button>
+
+  <button class="sw-reset" onclick="resetStopwatch()">
+    RESET
+  </button>
+
+  <!-- TAMBAHAN LAP -->
+  <button class="sw-lap" onclick="saveLap()">
+    LAP
+  </button>
+
+</div>
+
+<!-- LAP RESULT -->
+<div class="lap-container">
+
+  <div class="lap-title">
+    LAP / SPLIT TIME
+  </div>
+
+  <div id="lapList" class="lap-list">
+
+  </div>
+
+</div>
+
+    </div>
+
+  </div>
+
+  <!-- TIME CALCULATOR -->
+  <div class="tool-widget-card">
+
+    <div class="tool-header">
+      <span>🧮</span>
+      TIME CALCULATOR
+    </div>
+
+    <div class="calc-display">
+
+      <input
+        type="text"
+        id="calcInput"
+        readonly
+        placeholder="0"
+      >
+
+    </div>
+
+    <div class="calc-buttons">
+
+      <button onclick="clearCalc()">C</button>
+      <button onclick="addCalc('%')">%</button>
+      <button onclick="addCalc('÷')">÷</button>
+      <button onclick="addCalc('×')">×</button>
+
+      <button onclick="addCalc('7')">7</button>
+      <button onclick="addCalc('8')">8</button>
+      <button onclick="addCalc('9')">9</button>
+      <button onclick="addCalc('-')">−</button>
+
+      <button onclick="addCalc('4')">4</button>
+      <button onclick="addCalc('5')">5</button>
+      <button onclick="addCalc('6')">6</button>
+      <button onclick="addCalc('+')">+</button>
+
+      <button onclick="addCalc('1')">1</button>
+      <button onclick="addCalc('2')">2</button>
+      <button onclick="addCalc('3')">3</button>
+
+      <button class="calc-equal" onclick="calculateCalc()">
+        =
+      </button>
+
+      <button onclick="addCalc('0')">0</button>
+      <button onclick="addCalc('.')">.</button>
+
+    </div>
+
+  </div>
+
+</div>
+      <div class="grid">
+        <div>
+          <label>Name Type</label>
+          <input type="text" id="typeName" placeholder="Contoh: TYPE A" />
+        </div>
+
+        <div>
+          <label>Job Title</label>
+          <input type="text" id="task" placeholder="Contoh: Pasang Baut" />
+        </div>
+
+        <div>
+          <label>Time Step 1 (Second)</label>
+          <input type="number" id="s1" step="0.01" />
+        </div>
+
+        <div>
+          <label>Time Step 2 (Second)</label>
+          <input type="number" id="s2" step="0.01" />
+        </div>
+
+        <div>
+          <label>Time Step 3 (Second)</label>
+          <input type="number" id="s3" step="0.01" />
+        </div>
+
+        <div>
+          <label>Time Step 4 (Second)</label>
+          <input type="number" id="s4" step="0.01" />
+        </div>
+
+        <div>
+          <label>Time Step 5 (Second)</label>
+          <input type="number" id="s5" step="0.01" />
+        </div>
+
+        <div>
+          <label>Hour / Day</label>
+          <input type="number" id="workHour" value="7" />
+        </div>
+
+        <div>
+          <label>ManPower</label>
+          <input type="number" id="operator" value="1" />
+        </div>
+      </div>
+
+      <input type="hidden" id="editIndex" value="-1" />
+      <button class="btn-add" id="btnSubmit" onclick="addData()">+ Tambah Data</button>
+    </div>
+
+    <div class="card">
+      <h2>Time Study Analysis</h2>
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Station</th>
+              <th>Type</th>
+              <th>Job Title</th>
+              <th>ManPower</th>
+              <th>X1</th>
+              <th>X2</th>
+              <th>X3</th>
+              <th>X4</th>
+              <th>X5</th>
+              <th>Average Time</th>
+              <th>Maximum Time</th>
+              <th>Minimum Time</th>
+              <th>Output / Hour</th>
+              <th>Output / Day</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- =======================================================
+           YANG BARU: PANEL BLOK DASHBOARD ANALISIS PE PROFESIONAL
+           ======================================================= -->
+      <h3 style="color: #1e3a8a; margin-top: 35px; margin-bottom: 5px;">📊 Production Line Dashboard</h3>
+      <div class="pe-dashboard-grid">
+        <div class="pe-metric-card" id="peEffCard">
+          <div class="pe-card-title">Line Efficiency Status</div>
+          <div class="pe-card-value" id="peEffValue">0%</div>
+          <div class="pe-card-desc" id="peEffStatus">Belum ada data masuk</div>
+        </div>
+        <div class="pe-metric-card card-danger" id="peBnCard">
+          <div class="pe-card-title">Critical Bottleneck Station</div>
+          <div class="pe-card-value" id="peBnValue">-</div>
+          <div class="pe-card-desc" id="peBnDesc">Hambatan belum terdeteksi</div>
+        </div>
+        <div class="pe-metric-card" id="peLossCard">
+          <div class="pe-card-title">Capacity Loss (Balancing Loss)</div>
+          <div class="pe-card-value" id="peLossValue">0%</div>
+          <div class="pe-card-desc">Persentase alokasi waktu luang terbuang</div>
+        </div>
+      </div>
+      <div class="pe-insight-box" id="peAdviceBox" style="display: none;">
+        <h4>💡 Rekomendasi Rekayasa Industri (Process Engineering Advice)</h4>
+        <p id="peAdviceText">Silakan isi stasiun kerja untuk memicu kalkulasi taktis penyeimbangan lini.</p>
+      </div>
+
+      <!-- TEMPAT GRAFIK BATANG CSS OFFLINE (ANTIBLOKIR BROWSER) -->
+      <div class="chart-card">
+        <div class="chart-title-area" id="chartTitle">LINE TIME ANALYSIS</div>
+        <div class="custom-chart-wrapper" id="chartWrapper">
+          <!-- Kotak grafik batang akan digambar otomatis dari JavaScript di sini -->
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="summary-box">
+          <h3>Production Output / Day</h3>
+          <p id="totalOutput">0</p>
+        </div>
+
+        <div class="summary-box">
+          <h3>Production Output / Hour</h3>
+          <p id="totalPerJam">0</p>
+        </div>
+
+        <div class="summary-box">
+          <h3>Line Balancing Efficiency</h3>
+          <p id="bottleneckPos">0%</p>
+        </div>
+      </div>
+
+      <div class="footer-btn">
+        <button class="btn-export" onclick="exportExcel()">Export Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teks Berjalan Bawah (Kiri ke Kanan) -->
+  <div class="marquee-container marquee-bottom">
+    <div class="track-right">WEB DEVELOPER CHAREL JUNIOR RATTU &nbsp;&nbsp;&bull;&nbsp;&nbsp; PROCESS ENGINEERING TIME ANALYSIS SYSTEM &nbsp;&nbsp;&bull;&nbsp;&nbsp;</div>
+  </div>
+
+  <script>
+    let dataList = [];
+    let currentType = "";
+
+    function addData() {
+      const type = document.getElementById('typeName').value;
+      const task = document.getElementById('task').value;
+      const s1 = parseFloat(document.getElementById('s1').value) || 0;
+      const s2 = parseFloat(document.getElementById('s2').value) || 0;
+      const s3 = parseFloat(document.getElementById('s3').value) || 0;
+      const s4 = parseFloat(document.getElementById('s4').value) || 0;
+      const s5 = parseFloat(document.getElementById('s5').value) || 0;
+      const workHour = parseFloat(document.getElementById('workHour').value) || 7;
+      const operator = parseFloat(document.getElementById('operator').value) || 1;
+      const editIndex = parseInt(document.getElementById('editIndex').value);
+
+      if (!type && dataList.length === 0) {
+        alert('Masukkan Nama Type terlebih dahulu');
+        return;
+      }
+
+      if (type) {
+        currentType = type;
+        document.getElementById('chartTitle').innerText = currentType.toUpperCase();
+      }
+
+      const avg = ((s1 + s2 + s3 + s4 + s5) / 5).toFixed(2);
+      const biggest = Math.max(s1, s2, s3, s4, s5);
+      const cycleTime = biggest / operator;
+      const smallest = Math.min(s1, s2, s3, s4, s5);
+
+      const outputHour = cycleTime > 0 ? Math.floor(3600 / cycleTime) : 0;
+      const outputDay = outputHour * workHour;
+
+      const data = {
+        type: currentType,
+        station: editIndex !== -1 ? dataList[editIndex].station : (dataList.length + 1),
+        task, operator, s1, s2, s3, s4, s5, avg, biggest, cycleTime, smallest, outputHour, outputDay, workHour
+      };
+
+      if (editIndex !== -1) {
+        dataList[editIndex] = data;
+        document.getElementById('editIndex').value = "-1";
+        document.getElementById('btnSubmit').innerText = "+ Tambah Data";
+      } else {
+        dataList.push(data);
+      }
+
+      renderTable();
+      renderNativeChart(); // Panggil fungsi gambar grafik buatan sendiri
+
+      // === LOGIKA PEMBERSIHAN INPUTAN (NAMA TYPE, JAM KERJA, OPERATOR BERTAHAN KOKOH) ===
+      document.getElementById('task').value = '';
+      document.getElementById('s1').value = '';   document.getElementById('s2').value = '';
+      document.getElementById('s3').value = '';   document.getElementById('s4').value = '';
+      document.getElementById('s5').value = '';
+      document.getElementById('task').focus();
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector('#dataTable tbody');
+      tbody.innerHTML = '';
+
+      let maxCycleTime = 0;
+      let bottleneckItem = null;
+
+      if (dataList.length > 0) {
+        const listCycleTime = dataList.map(d => parseFloat(d.cycleTime));
+        maxCycleTime = Math.max(...listCycleTime);
+      }
+
+      dataList.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const currentItemCycleTime = parseFloat(item.cycleTime);
+
+        if (currentItemCycleTime === maxCycleTime && maxCycleTime > 0) {
+          row.classList.add('bottleneck');
+          bottleneckItem = item; // Tangkap pos penyebab ketidakseimbangan lini
+        }
+
+        row.innerHTML = `
+          <td>${item.station}</td><td>${item.type}</td><td>${item.task}</td><td>${item.operator}</td>
+          <td>${item.s1}</td><td>${item.s2}</td><td>${item.s3}</td><td>${item.s4}</td><td>${item.s5}</td>
+          <td>${item.avg}</td><td>${item.biggest}</td><td>${item.smallest}</td><td>${item.outputHour}</td><td>${item.outputDay}</td>
+          <td>${(currentItemCycleTime === maxCycleTime && maxCycleTime > 0) ? 'BOTTLENECK' : 'NORMAL'}</td>
+          <td><button class="btn-edit" onclick="confirmEdit(${index})">Edit</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const totalPos = dataList.length;
+      const totalCycleTimeSemuaPos = dataList.reduce((sum, d) => sum + parseFloat(d.cycleTime), 0);
+      const lineBalanceRatio = totalPos > 0 && maxCycleTime > 0 ? ((totalCycleTimeSemuaPos / (maxCycleTime * totalPos)) * 100).toFixed(2) : 0;
+      const finalHour = maxCycleTime > 0 ? Math.floor(3600 / maxCycleTime) : 0;
+      const currentWorkHour = dataList.length > 0 ? (dataList[dataList.length - 1].workHour || 7) : 7;
+
+      document.getElementById('totalOutput').innerText = finalHour * currentWorkHour;
+      document.getElementById('totalPerJam').innerText = finalHour;
+      document.getElementById('bottleneckPos').innerText = lineBalanceRatio + '%';
+
+      // Eksekusi fungsi kalkulasi data dashboard makro PE baru
+      calculatePEDashboard(lineBalanceRatio, bottleneckItem);
+    }
+
+    // === YANG BARU: LOGIKA DINAMIS DATA DASHBOARD REKAYASA INDUSTRI (PE) ===
+    function calculatePEDashboard(lbr, bnItem) {
+      const vEff = document.getElementById('peEffValue');
+      const sEff = document.getElementById('peEffStatus');
+      const cEff = document.getElementById('peEffCard');
+      const vBn = document.getElementById('peBnValue');
+      const dBn = document.getElementById('peBnDesc');
+      const vLoss = document.getElementById('peLossValue');
+      const boxAdv = document.getElementById('peAdviceBox');
+      const textAdv = document.getElementById('peAdviceText');
+
+      if (dataList.length === 0) {
+        boxAdv.style.display = "none";
+        return;
+      }
+
+      // 1. Olah Indikator Nilai Efisiensi Lini (LBR)
+      vEff.innerText = lbr + "%";
+      cEff.className = "pe-metric-card";
+      let effLabel = "POOR EFFICIENCY";
+
+      if (lbr >= 85) {
+        effLabel = "EXCELLENT LBR STATUS";
+        cEff.className = "pe-metric-card card-success";
+      } else if (lbr >= 75) {
+        effLabel = "GOOD LBR STATUS";
+      } else if (lbr >= 55) {
+        effLabel = "FAIR LBR STATUS";
+      }
+      sEff.innerText = "Kategori: " + effLabel;
+
+      // 2. Olah Deteksi Lokasi Akurat Hambatan (Bottleneck)
+      if (bnItem) {
+        vBn.innerText = "Pos " + bnItem.station;
+        dBn.innerText = "Tugas: " + bnItem.task + " (" + parseFloat(bnItem.cycleTime).toFixed(2) + "s)";
+      } else {
+        vBn.innerText = "-";
+        dBn.innerText = "Belum terdeteksi";
+      }
+
+      // 3. Olah Perhitungan Balancing Loss (Waktu Idle)
+      const bLoss = (100 - lbr).toFixed(2);
+      vLoss.innerText = bLoss + "%";
+
+      // 4. Olah Teks Rekomendasi Algoritmik Taktis PE (Saran Solutif Pabrik)
+      boxAdv.style.display = "block";
+      if (lbr >= 85) {
+        boxAdv.style.borderLeftColor = "#10b981";
+        boxAdv.style.background = "#f0fdf4";
+        textAdv.innerHTML = `Lintasan perakitan Anda sangat seimbang (LBR &gt; 85%). Ini merupakan performa lintasan ideal untuk lini produksi manufaktur massal. Pertahankan metode kerja saat ini dan awasi konsistensi material suplai.`;
+      } else {
+        boxAdv.style.borderLeftColor = "#d97706";
+        boxAdv.style.background = "#fffbec";
+        textAdv.innerHTML = `Ditemukan ketidakseimbangan lintasan sebesar <b>${bLoss}%</b> dengan bottleneck utama berada di <b>Pos ${bnItem.station} (${bnItem.task})</b>.<br><b>Rekomendasi Tindakan Process Engineer:</b><br>1. Bedah gerakan elemen kerja di Pos ${bnItem.station} dengan prinsip <b>ECRS</b> (Eliminate, Combine, Rearrange, Simplify) untuk memangkas manipulasi gerakan sia-sia.<br>2. Alokasikan atau pecah sebagian porsi tugas dari Pos ${bnItem.station} menuju stasiun kerja sekitar yang memiliki sisa waktu melonggar (Idle tinggi).<br>3. Pertimbangkan untuk menerapkan sistem stasiun kerja ganda (<i>dual-station</i>) atau menambahkan operator bantuan temporer untuk mereduksi beban kerja stasiun tersebut.`;
+      }
+    }
+
+    // === LOGIKA UTAMA: MERENDER GRAFIK BATANG SECARA OFFLINE (HTML & CSS MURNI) ===
+    function renderNativeChart() {
+      const wrapper = document.getElementById('chartWrapper');
+      wrapper.innerHTML = ''; // Bersihkan chart lama
+
+      if (dataList.length === 0) return;
+
+      const listCycleTime = dataList.map(d => parseFloat(d.cycleTime));
+      const maxCycleTime = Math.max(...listCycleTime);
+
+      dataList.forEach(item => {
+        const currentItemCycleTime = parseFloat(item.cycleTime);
+        
+        // Atur tinggi maksimal grafik dalam pixel (tinggi wadah adalah 220px)
+        const computedHeight = maxCycleTime > 0 ? (currentItemCycleTime / maxCycleTime) * 210 : 0;
+
+        const groupNode = document.createElement('div');
+        groupNode.className = 'bar-group';
+
+        groupNode.innerHTML = `
+          <div class="bar-text-value">${currentItemCycleTime.toFixed(2)}</div>
+          <div class="bar-rect ${currentItemCycleTime === maxCycleTime ? 'highlight-red' : ''
+           }" style="height: ${computedHeight}px;"></div>
+
+          <div class="bar-label-node">${item.station}</div>
+        `;
+        wrapper.appendChild(groupNode);
+      });
+    }
+
+    function confirmEdit(index) {
+      if (!confirm('Yakin mau edit data ini?')) return;
+      const item = dataList[index];
+      document.getElementById('typeName').value = item.type;
+      document.getElementById('task').value = item.task;
+      document.getElementById('s1').value = item.s1; document.getElementById('s2').value = item.s2;
+      document.getElementById('s3').value = item.s3; document.getElementById('s4').value = item.s4;
+      document.getElementById('s5').value = item.s5; document.getElementById('operator').value = item.operator;
+      document.getElementById('workHour').value = item.workHour;
+      document.getElementById('editIndex').value = index;
+      document.getElementById('btnSubmit').innerText = "Simpan Perubahan";
+    }
+
+    function exportExcel() {
+  if (dataList.length === 0) { 
+    alert('Tidak ada data untuk di-export!'); 
+    return; 
+  }
+
+  const originalTable = document.getElementById('dataTable');
+  const cloneTable = originalTable.cloneNode(true);
+
+  // Hapus kolom Action
+  cloneTable.querySelectorAll('tr').forEach(row => {
+    if (row.lastElementChild) row.removeChild(row.lastElementChild);
+  });
+
+  // ============================
+  // HAPUS KOLOM TYPE DARI TABEL
+  // ============================
+  cloneTable.querySelectorAll('tr').forEach(row => {
+    if (row.children[1]) {
+      row.removeChild(row.children[1]);
+    }
+  });
+
+  // ============================
+  // BORDER SEMUA CELL
+  // ============================
+  const cells = cloneTable.querySelectorAll('th, td');
+  cells.forEach(cell => {
+    cell.style.border = '1px solid #000000';
+  });
+
+  // ============================
+  // STYLE HEADER
+  // ============================
+  const headers = cloneTable.querySelectorAll('thead th');
+  headers.forEach((th, idx) => {
+
+    th.style.backgroundColor = '#c0c0c0';
+    th.style.color = '#000000';
+    th.style.textAlign = 'center';
+    th.style.verticalAlign = 'middle';
+    th.style.fontWeight = 'bold';
+  });
+
+  // ============================
+  // STYLE ISI TABEL
+  // ============================
+  const rows = cloneTable.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const tds = row.querySelectorAll('td');
+
+    tds.forEach(td => {
+      td.style.textAlign = 'center';
+      td.style.verticalAlign = 'middle';
+    });
+  });
+
+  // ============================
+  // JUDUL TYPE DI ATAS
+  // ============================
+  const titleTable = `
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 15px;">
+      <tr>
+        <td colspan="14" style="
+          border: 1px solid #000000;
+          font-size: 30px;
+          font-weight: bold;
+          text-align: center;
+          vertical-align: middle;
+          padding: 20px;
+        ">
+          ${currentType}
+        </td>
+      </tr>
+    </table>
+  `;
+
+  // ============================
+  // NAMA FILE
+  // ============================
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+
+  // --- TAMBAHKAN KODE JAM DI BAWAH INI ---
+const hh = String(today.getHours()).padStart(2, '0');
+const min = String(today.getMinutes()).padStart(2, '0');
+const ss = String(today.getSeconds()).padStart(2, '0');
+
+// Format Tanggal dan Jam (Contoh hasil: 17-05-2026_183015)
+const formattedDate = dd + '-' + mm + '-' + yyyy + '_' + hh + min + ss;
+
+  const fileNameType = currentType 
+    ? currentType.replace(/[^a-zA-Z0-9]/g, '_') 
+    : 'Time_Analysis';
+
+  const finalFileName = `${fileNameType}_${formattedDate}.xls`;
+
+  // ============================
+  // EXPORT
+  // ============================
+  const finalHtml = titleTable + cloneTable.outerHTML;
+
+  const blob = new Blob([finalHtml], { 
+    type: 'application/vnd.ms-excel' 
+  });
+
+  const link = document.createElement('a');
+
+  link.href = URL.createObjectURL(blob);
+  link.download = finalFileName;
+  link.click();
+}
+// =====================================
+// DIGITAL CLOCK
+// =====================================
+
+function updateDigitalClock(){
+
+  const now = new Date();
+
+  const hh =
+    String(now.getHours()).padStart(2,'0');
+
+  const mm =
+    String(now.getMinutes()).padStart(2,'0');
+
+  const ss =
+    String(now.getSeconds()).padStart(2,'0');
+
+  document.getElementById('digitalClock').innerText =
+    hh + ':' + mm + ':' + ss;
+}
+
+setInterval(updateDigitalClock,1000);
+
+updateDigitalClock();
+
+
+// =====================================
+// STOPWATCH
+// =====================================
+
+let stopwatchInterval;
+let elapsedTime = 0;
+let startTime = 0;
+
+function updateStopwatch(){
+
+  elapsedTime =
+    Date.now() - startTime;
+
+  const hrs =
+    Math.floor(elapsedTime / 3600000);
+
+  const mins =
+    Math.floor((elapsedTime % 3600000) / 60000);
+
+  const secs =
+    Math.floor((elapsedTime % 60000) / 1000);
+
+  const ms =
+    elapsedTime % 1000;
+
+  document.getElementById('stopwatchMain').innerText =
+    `${String(hrs).padStart(2,'0')}:` +
+    `${String(mins).padStart(2,'0')}:` +
+    `${String(secs).padStart(2,'0')}`;
+
+  document.getElementById('stopwatchMs').innerText =
+    '.' + String(ms).padStart(3,'0');
+}
+
+function startStopwatch(){
+
+  startTime =
+    Date.now() - elapsedTime;
+
+  clearInterval(stopwatchInterval);
+
+  stopwatchInterval =
+    setInterval(updateStopwatch,10);
+}
+
+function stopStopwatch(){
+
+  clearInterval(stopwatchInterval);
+}
+// =====================================
+// LAP / SPLIT RESET FROM 0
+// =====================================
+
+let lapCount = 0;
+let lastLapTime = 0;
+
+function saveLap(){
+
+  if(elapsedTime <= 0) return;
+
+  lapCount++;
+
+  // HITUNG SELISIH DARI LAP SEBELUMNYA
+  const lapElapsed =
+    elapsedTime - lastLapTime;
+
+  // UPDATE PATOKAN LAP TERAKHIR
+  lastLapTime = elapsedTime;
+
+  const hrs =
+    Math.floor(lapElapsed / 3600000);
+
+  const mins =
+    Math.floor((lapElapsed % 3600000) / 60000);
+
+  const secs =
+    Math.floor((lapElapsed % 60000) / 1000);
+
+  const ms =
+    lapElapsed % 1000;
+
+  const finalTime =
+    `${String(hrs).padStart(2,'0')}:` +
+    `${String(mins).padStart(2,'0')}:` +
+    `${String(secs).padStart(2,'0')}.` +
+    `${String(ms).padStart(3,'0')}`;
+
+  const lapItem =
+    document.createElement('div');
+
+  lapItem.className = 'lap-item';
+
+  lapItem.innerHTML = `
+    <span>LAP ${lapCount}</span>
+    <span>${finalTime}</span>
+  `;
+
+  document
+    .getElementById('lapList')
+    .prepend(lapItem);
+}
+
+function resetStopwatch(){
+
+  clearInterval(stopwatchInterval);
+
+  elapsedTime = 0;
+
+  document.getElementById('stopwatchMain').innerText =
+    '00:00:00';
+
+  document.getElementById('stopwatchMs').innerText =
+    '.000';
+    document.getElementById('lapList').innerHTML = '';
+
+lapCount = 0;
+lastLapTime = 0;
+}
+
+
+// =====================================
+// CALCULATOR
+// =====================================
+
+function addCalc(value){
+
+  const display =
+    document.getElementById('calcInput');
+
+  display.value += value;
+}
+
+function clearCalc(){
+
+  document.getElementById('calcInput').value = '';
+}
+
+function calculateCalc(){
+
+  const display =
+    document.getElementById('calcInput');
+
+  try{
+
+    let expression =
+      display.value;
+
+    expression =
+      expression.replace(/÷/g,'/');
+
+    expression =
+      expression.replace(/×/g,'*');
+
+    const result =
+      eval(expression);
+
+    display.value =
+      result;
+
+  }catch{
+
+    display.value =
+      'ERROR';
+  }
+}
+  </script>
+</body>
+</html>
